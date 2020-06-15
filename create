@@ -1,0 +1,40 @@
+#!/bin/bash
+# author: Karol Dudek <karoiz@sli.pl>
+
+###############################################
+
+#DEVICE=/dev/sda
+DEVICE=/dev/nvme0n1
+
+DIR=$(dirname $0)
+#DIR=/mnt/netdisk/restore/home_desktop
+
+#ARCHIVER=lzop    # low compression (very fast compression)
+#ARCHIVER=lz4     # low compression (very fast decompression)
+#ARCHIVER=gzip    # normal compression
+ARCHIVER=xz      # high compression
+
+###############################################
+
+export XZ_DEFAULTS='--threads=0'
+
+mkdir -p $DIR/dev
+
+echo "-- Saving computer specification.."
+lscpu > $DIR/cpu.info
+grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort | uniq > $DIR/mac.info
+sgdisk -b $DIR/disk.table $DEVICE
+sfdisk -d $DEVICE > $DIR/disk.info
+
+for PARTITION in $(grep '^/dev' $DIR/disk.info | cut -d' ' -f1)
+do
+  echo "-- Creating copy of $PARTITION partition.."
+
+  TYPE=$(blkid -s TYPE -o value $PARTITION)
+  if [ ! -x /usr/bin/partclone.$TYPE ]
+  then
+    TYPE=imager
+  fi
+
+  partclone.$TYPE -c -s $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR$PARTITION.$TYPE.$ARCHIVER.
+done
