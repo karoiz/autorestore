@@ -53,7 +53,13 @@ do
 
   echo "-- Restoring copy of $PARTITION partition from ($FILEPATH).."
 
-  cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
+  if [ "stream" = "$TYPE" ]
+  then
+    # workaround because partclone.imager v0.3.12 - image size always zero / segmentation fault
+    cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd > $PARTITION
+  else
+    cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
+  fi
 done
 
 echo "---------------------------------------------------"

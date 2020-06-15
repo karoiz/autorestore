@@ -31,10 +31,12 @@ do
   echo "-- Creating copy of $PARTITION partition.."
 
   TYPE=$(blkid -s TYPE -o value $PARTITION)
-  if [ ! -x /usr/bin/partclone.$TYPE ]
+  if [ -x /usr/bin/partclone.$TYPE ]
   then
-    TYPE=imager
+    partclone.$TYPE -c -s $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR$PARTITION.$TYPE.$ARCHIVER.
+  else
+    TYPE=stream
+    # workaround because partclone.imager v0.3.12 - image size always zero / segmentation fault
+    cat $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR$PARTITION.$TYPE.$ARCHIVER.
   fi
-
-  partclone.$TYPE -c -s $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR$PARTITION.$TYPE.$ARCHIVER.
 done
