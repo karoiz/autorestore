@@ -1,0 +1,75 @@
+#!/bin/bash
+# author: Karol Dudek <karoiz@sli.pl>
+
+###############################################
+
+#DEVICE=/dev/sda
+DEVICE=/dev/nvme0n1
+
+DIR=$(dirname $0)
+#DIR=/run/archiso/bootmnt
+#DIR=/mnt/netdisk/restore/home_desktop
+
+###############################################
+
+RESTORE_MAC=$(cat $DIR/mac.info)
+CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort | uniq)
+
+if [ "$RESTORE_MAC" = "$CURRENT_MAC" ]
+then
+  echo "-- The restore copy matches your computer."
+else
+  echo "-- The restore copy NOT matches your computer."
+  echo "A copy has been created for:" $RESTORE_MAC". Your computer:" $CURRENT_MAC"."
+  exit
+fi
+
+if [ -b $DEVICE ]
+then
+  echo "-- Found disk $DEVICE"
+else
+  echo "-- Disk not found $DEVICE"
+  exit
+fi
+
+sleep 2
+
+if [ $(ls $DEVICE* | wc -l) -eq 1 ]
+then
+  echo "-- Restoring system on new disk"
+  sgdisk -l $DIR/disk.table $DEVICE
+else
+  echo "-- Restoring system on old disk"
+fi
+
+sleep 5
+
+for PART in $(ls $DIR/dev | cut -d. -f1 | uniq)
+do
+  PARTITION=/dev/$PART
+  FILEPATH=$(ls $DIR/dev/$PART* | head -n 1)
+  TYPE=$(basename $FILEPATH | cut -d. -f2)
+  ARCHIVER=$(basename $FILEPATH | cut -d. -f3)
+
+  echo "-- Restoring copy of $PARTITION partition from ($FILEPATH).."
+
+  cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
+done
+
+echo "---------------------------------------------------"
+
+sync
+
+if [ -n "$(grep /dev/sr0 /proc/mounts)" ]
+then
+  eject -m cdrom
+fi
+
+sleep 2
+
+echo "-- Remove disc from drive. System will restart in 30 seconds..."
+
+sleep 30
+
+echo 1 > /proc/sys/kernel/sysrq
+echo b > /proc/sysrq-trigger
