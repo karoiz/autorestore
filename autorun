@@ -51,7 +51,7 @@ do
   TYPE=$(basename $FILEPATH | cut -d. -f2)
   ARCHIVER=$(basename $FILEPATH | cut -d. -f3)
 
-  echo "-- Restoring copy of $PARTITION partition from ($FILEPATH).."
+  echo "-- Restoring copy of $PARTITION partition from $FILEPATH"
 
   if [ "stream" = "$TYPE" ]
   then
@@ -73,9 +73,9 @@ fi
 
 sleep 2
 
-echo "-- Remove disc from drive. System will restart in 30 seconds..."
+echo "-- Remove disc from drive and press ENTER to restart your computer"
 
-sleep 30
+read
 
 echo 1 > /proc/sys/kernel/sysrq
 echo b > /proc/sysrq-trigger
