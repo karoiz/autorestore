@@ -13,7 +13,7 @@ DIR=$(dirname $0)
 ###############################################
 
 RESTORE_MAC=$(cat $DIR/mac.info)
-CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort | uniq)
+CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort -u)
 
 if [ "$RESTORE_MAC" = "$CURRENT_MAC" ]
 then
@@ -21,7 +21,7 @@ then
 else
   echo "-- The restore copy NOT matches your computer."
   echo "A copy has been created for:" $RESTORE_MAC". Your computer:" $CURRENT_MAC"."
-  exit
+  exit 1
 fi
 
 if [ -b $DEVICE ]
@@ -29,25 +29,26 @@ then
   echo "-- Found disk $DEVICE"
 else
   echo "-- Disk not found $DEVICE"
-  exit
+  exit 2
 fi
 
 sleep 2
 
 if [ $(ls $DEVICE* | wc -l) -eq 1 ]
 then
-  echo "-- Restoring system on new disk"
-  sgdisk -l $DIR/disk.table $DEVICE
+  echo "-- Restoring system on clean disk"
+  wipefs -a $DEVICE
+  dd if=$DIR/disk.table of=$DEVICE
 else
   echo "-- Restoring system on old disk"
 fi
 
 sleep 5
 
-for PART in $(ls $DIR/dev | cut -d. -f1 | uniq)
+for PART in $(ls $DIR/disk | cut -d. -f1 | uniq)
 do
-  PARTITION=/dev/$PART
-  FILEPATH=$(ls $DIR/dev/$PART* | head -n 1)
+  PARTITION=$(dirname $DEVICE)/$PART
+  FILEPATH=$(ls $DIR/disk/$PART* | head -n 1)
   TYPE=$(basename $FILEPATH | cut -d. -f2)
   ARCHIVER=$(basename $FILEPATH | cut -d. -f3)
 
@@ -56,9 +57,9 @@ do
   if [ "stream" = "$TYPE" ]
   then
     # workaround because partclone.imager v0.3.12 - image size always zero / segmentation fault
-    cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd > $PARTITION
+    cat $DIR/disk/$PART.$TYPE.* | $ARCHIVER -cd > $PARTITION
   else
-    cat $DIR/dev/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
+    cat $DIR/disk/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
   fi
 done
 
