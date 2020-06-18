@@ -22,8 +22,8 @@ mkdir -p $DIR/disk
 
 echo "-- Saving computer specification.."
 lscpu > $DIR/cpu.info
-grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort -u > $DIR/mac.info
-sfdisk -d $DEVICE > $DIR/disk.info
+grep -h -v 00:00:00:00:00:00 /sys/class/net/enp*/address | sort -u > $DIR/mac.info
+sgdisk -p $DEVICE > $DIR/disk.info
 
 echo "-- Creating copy of partition table.."
 dd if=$DEVICE of=$DIR/disk.table bs=512 count=34

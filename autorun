@@ -13,7 +13,7 @@ DIR=$(dirname $0)
 ###############################################
 
 RESTORE_MAC=$(cat $DIR/mac.info)
-CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/*/address | sort -u)
+CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/enp*/address | sort -u)
 
 if [ "$RESTORE_MAC" = "$CURRENT_MAC" ]
 then
@@ -37,8 +37,9 @@ sleep 2
 if [ $(ls $DEVICE* | wc -l) -eq 1 ]
 then
   echo "-- Restoring system on clean disk"
-  wipefs -a $DEVICE
+  sgdisk -Z $DEVICE
   dd if=$DIR/disk.table of=$DEVICE
+  sgdisk -e $DEVICE
 else
   echo "-- Restoring system on old disk"
 fi
