@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # author: Karol Dudek <karoiz@sli.pl>
 
 ###############################################
@@ -18,15 +18,19 @@ ARCHIVER=xz      # high compression
 
 export XZ_DEFAULTS='--threads=0'
 
-mkdir -p $DIR/disk
+mkdir -p $DIR/info $DIR/disk
 
 echo "-- Saving computer specification.."
-lscpu > $DIR/cpu.info
-grep -h -v 00:00:00:00:00:00 /sys/class/net/enp*/address | sort -u > $DIR/mac.info
-sgdisk -p $DEVICE > $DIR/disk.info
+cat /sys/class/dmi/id/product_uuid > $DIR/info/uuid
+dmidecode -t0 > $DIR/info/bios
+dmidecode -t1 > $DIR/info/system
+lscpu > $DIR/info/cpu
+hwinfo --netcard | grep -E 'controller|Model:|Permanent HW Address:' > $DIR/info/netcard
+sgdisk -p $DEVICE > $DIR/info/disk
+cat $DIR/info/system
 
 echo "-- Creating copy of partition table.."
-dd if=$DEVICE of=$DIR/disk.table bs=512 count=34
+dd if=$DEVICE of=$DIR/disk/table bs=512 count=34
 
 for PARTITION in $(ls $DEVICE?*)
 do

@@ -12,15 +12,19 @@ DIR=$(dirname $0)
 
 ###############################################
 
-RESTORE_MAC=$(cat $DIR/mac.info)
-CURRENT_MAC=$(grep -h -v 00:00:00:00:00:00 /sys/class/net/enp*/address | sort -u)
+echo "-- Image compatibility verification with computer"
 
-if [ "$RESTORE_MAC" = "$CURRENT_MAC" ]
+IMAGE_UUID=$(cat $DIR/info/uuid)
+COMPUTER_UUID=$(cat /sys/class/dmi/id/product_uuid)
+
+echo "Image    UUID : $IMAGE_UUID"
+echo "Computer UUID : $COMPUTER_UUID"
+
+if [ "$IMAGE_UUID" = "$COMPUTER_UUID" ]
 then
-  echo "-- The restore copy matches your computer."
+  echo "The restore copy matches your computer"
 else
-  echo "-- The restore copy NOT matches your computer."
-  echo "A copy has been created for:" $RESTORE_MAC". Your computer:" $CURRENT_MAC"."
+  echo "The restore copy NOT matches your computer"
   exit 1
 fi
 
@@ -38,7 +42,7 @@ if [ $(ls $DEVICE* | wc -l) -eq 1 ]
 then
   echo "-- Restoring system on clean disk"
   sgdisk -Z $DEVICE
-  dd if=$DIR/disk.table of=$DEVICE
+  dd if=$DIR/disk/table of=$DEVICE
   sgdisk -e $DEVICE
 else
   echo "-- Restoring system on old disk"
@@ -46,7 +50,7 @@ fi
 
 sleep 5
 
-for PART in $(ls $DIR/disk | cut -d. -f1 | uniq)
+for PART in $(ls -I table $DIR/disk | cut -d. -f1 | uniq)
 do
   PARTITION=$(dirname $DEVICE)/$PART
   FILEPATH=$(ls $DIR/disk/$PART* | head -n 1)
