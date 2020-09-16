@@ -1,5 +1,7 @@
 #!/bin/bash
 # author: Karol Dudek <karoiz@sli.pl>
 
-mkdir -p /mnt/netdisk
-mount.cifs //netdisk.lan/exchange /mnt/netdisk -o vers=1.0,user=guest,pass=
+DIR=/mnt/netdisk
+
+mkdir -p $DIR
+mount.cifs //netdisk.lan/exchange $DIR -o vers=1.0,user=guest,pass=
