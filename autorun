@@ -58,14 +58,7 @@ do
   ARCHIVER=$(basename $FILEPATH | cut -d. -f3)
 
   echo "-- Restoring copy of $PARTITION partition from $FILEPATH"
-
-  if [ "stream" = "$TYPE" ]
-  then
-    # workaround because partclone.imager v0.3.12 - image size always zero / segmentation fault
-    cat $DIR/disk/$PART.$TYPE.* | $ARCHIVER -cd > $PARTITION
-  else
-    cat $DIR/disk/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
-  fi
+  cat $DIR/disk/$PART.$TYPE.* | $ARCHIVER -cd | partclone.$TYPE -r -o $PARTITION
 done
 
 echo "---------------------------------------------------"

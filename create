@@ -34,17 +34,14 @@ dd if=$DEVICE of=$DIR/disk/table bs=512 count=34
 
 for PARTITION in $(ls $DEVICE?*)
 do
-  echo "-- Creating copy of $PARTITION partition.."
-
   TYPE=$(blkid -s TYPE -o value $PARTITION)
-  if [ -x /usr/bin/partclone.$TYPE ]
+  if [ ! -x /usr/bin/partclone.$TYPE ]
   then
-    partclone.$TYPE -c -s $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR/disk/$(basename $PARTITION).$TYPE.$ARCHIVER.
-  else
-    TYPE=stream
-    # workaround because partclone.imager v0.3.12 - image size always zero / segmentation fault
-    cat $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR/disk/$(basename $PARTITION).$TYPE.$ARCHIVER.
+    TYPE=imager
   fi
+
+  echo "-- Creating copy of $PARTITION partition.."
+  partclone.$TYPE -c -s $PARTITION | $ARCHIVER -c | split -d -b1G - $DIR/disk/$(basename $PARTITION).$TYPE.$ARCHIVER.
 done
 
 echo "-- Backup complete."
